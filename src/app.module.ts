@@ -8,7 +8,6 @@ import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
-import { ClientesModule } from './clientes/clientes.module'; // Depende de tu estructura
 
 @Module({
   imports: [
@@ -26,7 +25,6 @@ import { ClientesModule } from './clientes/clientes.module'; // Depende de tu es
     PrismaModule, // <--- Ahora lo encuentra
     AuthModule,
     UsuariosModule,
-    ClientesModule,
   ],
   // Controllers y Providers son opcionales aquí si no usamos rutas REST
 })
