@@ -3,7 +3,7 @@ import { InputType, Field, Int } from '@nestjs/graphql';
 @InputType()
 export class CreateUsuarioInput {
   @Field()
-  cedula: string; // Requerido para PK
+  cedula: string;
 
   @Field()
   nombre: string;
@@ -12,7 +12,7 @@ export class CreateUsuarioInput {
   email: string;
 
   @Field()
-  password: string; // Se encripta en el servicio
+  password: string;
 
   @Field()
   direccionPrincipal: string;

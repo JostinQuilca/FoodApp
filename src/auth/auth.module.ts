@@ -9,9 +9,8 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
 @Module({
   imports: [
     PassportModule,
-    UsuariosModule, // Necesario para buscar usuarios
+    UsuariosModule,
 
-    // Configuración del JWT
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,6 +21,6 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
     }),
   ],
   providers: [AuthService, AuthResolver],
-  exports: [AuthService], // Exportamos para los Guards
+  exports: [AuthService],
 })
 export class AuthModule {}
