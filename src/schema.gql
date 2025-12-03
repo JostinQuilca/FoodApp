@@ -2,6 +2,27 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Rol {
+  id: Int!
+  nombre: String!
+}
+
+type Usuario {
+  id: Int!
+  nombre: String!
+  email: String!
+  direccionPrincipal: String!
+  apellido: String
+  telefono: String
+  estado: String!
+  rol: Rol!
+}
+
+type LoginResponse {
+  access_token: String!
+  user: Usuario!
+}
+
 type Cliente {
   id: Int!
   nombre: String!
@@ -13,11 +34,29 @@ type Cliente {
 }
 
 type Query {
+  usuarios: [Usuario!]!
   clientes: [Cliente!]!
 }
 
 type Mutation {
+  login(loginInput: LoginInput!): LoginResponse!
+  register(createUsuarioInput: CreateUsuarioInput!): Usuario!
   createCliente(createClienteInput: CreateClienteInput!): Cliente!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input CreateUsuarioInput {
+  nombre: String!
+  apellido: String
+  telefono: String
+  email: String!
+  password: String!
+  direccionPrincipal: String!
+  rolId: Int!
 }
 
 input CreateClienteInput {

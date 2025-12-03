@@ -1,28 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { CreateClienteInput } from './dto/create-cliente.input';
-import { PrismaService } from '../prisma/prisma.service';
+
+// NOTA: EL CÓDIGO DE BASE DE DATOS FUE MOVIDO A USUARIOS SERVICE.
 
 @Injectable()
 export class ClientesService {
-  constructor(private prisma: PrismaService) {}
-
-  async create(createClienteInput: CreateClienteInput) {
-    // AQUÍ: Usa 'this.prisma.cliente' (Singular)
-    // Si sigue dando error, prueba 'this.prisma.clientes' (Plural, a veces Prisma lo pluraliza solo)
-    // ... dentro del método create ...
-    return await this.prisma.cliente.create({
-      data: {
-        nombre: createClienteInput.nombre,
-        apellido: createClienteInput.apellido, // <--- Nuevo
-        telefono: createClienteInput.telefono, // <--- Nuevo
-        email: createClienteInput.email,
-        contrasenaHash: createClienteInput.password,
-        direccionPrincipal: createClienteInput.direccionPrincipal,
-      },
-    });
+  // Stubs para evitar errores si otros módulos lo están llamando
+  create(createClienteInput: CreateClienteInput) {
+    return `CLIENTE service is deprecated. Use UsuariosService.`;
   }
 
-  async findAll() {
-    return await this.prisma.cliente.findMany();
+  findAll() {
+    return [];
   }
 }
