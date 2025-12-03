@@ -1,29 +1,33 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config'; // <--- Falta esto
-import { GraphQLModule } from '@nestjs/graphql'; // <--- Falta esto
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo'; // <--- Falta esto
+import { ConfigModule } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 
+// 🚨 AQUÍ ESTABA EL ERROR: Faltaba importar los módulos que creamos
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { ClientesModule } from './clientes/clientes.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
+import { ClientesModule } from './clientes/clientes.module'; // Depende de tu estructura
 
 @Module({
   imports: [
-    // 1. Cargar el archivo .env (Vital para la base de datos)
+    // 1. Configuración Global (.env)
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // 2. Encender el motor GraphQL (Esto crea la ruta /graphql)
+    // 2. Motor GraphQL (Vital para /graphql)
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-      playground: true, // Esto habilita la pantalla visual
+      playground: true,
     }),
 
-    // 3. Tus módulos
-    PrismaModule,
+    // 3. Módulos de la Aplicación
+    PrismaModule, // <--- Ahora lo encuentra
     AuthModule,
+    UsuariosModule,
     ClientesModule,
   ],
+  // Controllers y Providers son opcionales aquí si no usamos rutas REST
 })
 export class AppModule {}
