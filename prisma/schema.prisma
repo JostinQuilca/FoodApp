@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Clientes
+model Cliente {
+  id                Int       @id @default(autoincrement()) @map("cliente_id")
+  nombre            String    @db.VarChar(100)
+  apellido          String?   @db.VarChar(100)
+  telefono          String?   @unique @db.VarChar(15)
+  email             String    @unique @db.VarChar(100)
+  direccionPrincipal String   @map("direccion_principal")
+  contrasenaHash    String    @map("contrasena_hash") @db.VarChar(255)
+  estado            String    @default("ACTIVO") @db.VarChar(20)
+  
+  // Relación con Pedidos
+  pedidos           Pedido[]
+
+  @@map("Clientes") // Nombre real en la DB
+}
+
+// 2. Categorias
+model CategoriaMenu {
+  id      Int        @id @default(autoincrement()) @map("categoria_id")
+  nombre  String     @unique @db.VarChar(100)
+  estado  String     @default("ACTIVO") @db.VarChar(20)
+  
+  items   ItemMenu[]
+
+  @@map("Categorias_Menu")
+}
+
+// 3. Items del Menu
+model ItemMenu {
+  id          Int      @id @default(autoincrement()) @map("item_id")
+  categoriaId Int      @map("categoria_id")
+  nombreItem  String   @map("nombre_item") @db.VarChar(150)
+  descripcion String?
+  precio      Decimal  @db.Decimal(10, 2)
+  disponible  Boolean  @default(true)
+  estado      String   @default("ACTIVO") @db.VarChar(20)
+
+  categoria   CategoriaMenu @relation(fields: [categoriaId], references: [id])
+  detalles    DetallePedido[]
+  opciones    OpcionItem[]
+
+  @@map("Items_Menu")
+}
+
+// 4. Pedidos
+model Pedido {
+  id              Int      @id @default(autoincrement()) @map("pedido_id")
+  clienteId       Int      @map("cliente_id")
+  fechaPedido     DateTime @default(now()) @map("fecha_pedido")
+  estadoPedido    String   @default("Pendiente") @map("estado_pedido") @db.VarChar(50)
+  tipoEntrega     String   @map("tipo_entrega") @db.VarChar(50)
+  direccionEntrega String  @map("direccion_entrega")
+  montoTotal      Decimal  @map("monto_total") @db.Decimal(10, 2)
+  estado          String   @default("ACTIVO") @db.VarChar(20)
+
+  cliente         Cliente  @relation(fields: [clienteId], references: [id])
+  detalles        DetallePedido[]
+
+  @@map("Pedidos")
+}
+
+// 5. Detalles Pedido
+model DetallePedido {
+  id              Int      @id @default(autoincrement()) @map("detalle_id")
+  pedidoId        Int      @map("pedido_id")
+  itemId          Int      @map("item_id")
+  cantidad        Int
+  precioUnitario  Decimal  @map("precio_unitario") @db.Decimal(10, 2)
+  subtotal        Decimal  @db.Decimal(10, 2)
+  notasAdicionales String? @map("notas_adicionales")
+  estado          String   @default("ACTIVO") @db.VarChar(20)
+
+  pedido          Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  item            ItemMenu @relation(fields: [itemId], references: [id])
+
+  @@map("Detalles_Pedido")
+}
+
+// 6. Opciones Item
+model OpcionItem {
+  id           Int      @id @default(autoincrement()) @map("opcion_id")
+  itemId       Int      @map("item_id")
+  nombreOpcion String   @map("nombre_opcion") @db.VarChar(100)
+  valorOpcion  String   @map("valor_opcion") @db.VarChar(100)
+  ajustePrecio Decimal  @default(0.00) @map("ajuste_precio") @db.Decimal(10, 2)
+  estado       String   @default("ACTIVO") @db.VarChar(20)
+
+  item         ItemMenu @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("Opciones_Item")
+}

@@ -1,0 +1,30 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Cliente {
+  id: Int!
+  nombre: String!
+  apellido: String
+  telefono: String
+  email: String!
+  direccionPrincipal: String!
+  estado: String!
+}
+
+type Query {
+  clientes: [Cliente!]!
+}
+
+type Mutation {
+  createCliente(createClienteInput: CreateClienteInput!): Cliente!
+}
+
+input CreateClienteInput {
+  nombre: String!
+  apellido: String
+  telefono: String
+  email: String!
+  password: String!
+  direccionPrincipal: String!
+}
