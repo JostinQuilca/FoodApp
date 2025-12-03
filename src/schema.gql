@@ -8,7 +8,7 @@ type Rol {
 }
 
 type Usuario {
-  id: Int!
+  cedula: String!
   nombre: String!
   email: String!
   direccionPrincipal: String!
@@ -23,25 +23,13 @@ type LoginResponse {
   user: Usuario!
 }
 
-type Cliente {
-  id: Int!
-  nombre: String!
-  apellido: String
-  telefono: String
-  email: String!
-  direccionPrincipal: String!
-  estado: String!
-}
-
 type Query {
   usuarios: [Usuario!]!
-  clientes: [Cliente!]!
 }
 
 type Mutation {
   login(loginInput: LoginInput!): LoginResponse!
   register(createUsuarioInput: CreateUsuarioInput!): Usuario!
-  createCliente(createClienteInput: CreateClienteInput!): Cliente!
 }
 
 input LoginInput {
@@ -50,20 +38,12 @@ input LoginInput {
 }
 
 input CreateUsuarioInput {
+  cedula: String!
   nombre: String!
-  apellido: String
-  telefono: String
   email: String!
   password: String!
   direccionPrincipal: String!
+  apellido: String
+  telefono: String
   rolId: Int!
-}
-
-input CreateClienteInput {
-  nombre: String!
-  apellido: String
-  telefono: String
-  email: String!
-  password: String!
-  direccionPrincipal: String!
 }
