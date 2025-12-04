@@ -13,6 +13,7 @@ export class AuthService {
 
   async validateUser(email: string, pass: string) {
     const user = await this.prisma.usuario.findUnique({
+
       where: { email },
       include: { rol: true }, // Traemos el rol
     });
