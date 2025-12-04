@@ -4,11 +4,10 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Jostin pero como hace una api sin poner Cors?? jajaj El michael 
-  // Vale verg.. 
+
   app.enableCors({
     origin: 'http://localhost:3000',  
-    methods: ['GET', 'POST'],        
+    methods: ['GET', 'POST','PUT','DELETE'],        
     allowedHeaders: ['Content-Type', 'Authorization'],  
   });
 

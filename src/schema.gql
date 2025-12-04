@@ -35,7 +35,7 @@ type Mutation {
 input LoginInput {
   email: String!
   password: String!
-}
+}                                                                       
 
 input CreateUsuarioInput {
   cedula: String!
