@@ -15,87 +15,60 @@ model Rol {
   
   usuarios  Usuario[]
 
-  @@map("Roles")
+  @@map("roles")
 }
 
-// 2. Usuarios (Corregido a SERIAL/Int para que Pedidos funcione)
+// 2. Usuarios (PK es Cédula String)
 model Usuario {
-  id                Int       @id @default(autoincrement()) @map("usuario_id")
+  cedula            String    @id @db.VarChar(10) // La cédula es la clave primaria
   rolId             Int       @map("rol_id")
   nombre            String    @db.VarChar(100)
   apellido          String?   @db.VarChar(100)
   telefono          String?   @unique @db.VarChar(15)
   email             String    @unique @db.VarChar(100)
-  direccionPrincipal String   @map("direccion_principal")
+  direccionPrincipal String   @map("direccion_principal") @db.Text
   contrasenaHash    String    @map("contrasena_hash") @db.VarChar(255)
   estado            String    @default("ACTIVO") @db.VarChar(20)
 
   rol               Rol       @relation(fields: [rolId], references: [id])
   pedidos           Pedido[]
 
-  @@map("Usuarios")
+  @@map("usuarios")
 }
 
-// 3. Categorias
-model CategoriaMenu {
-  id      Int        @id @default(autoincrement()) @map("categoria_id")
-  nombre  String     @unique @db.VarChar(100)
-  estado  String     @default("ACTIVO") @db.VarChar(20)
+// 3. Platillos (Antes Items_Menu, ahora con categoría como texto)
+model Platillo {
+  id               Int      @id @default(autoincrement()) @map("item_id")
+  categoriaNombre  String   @map("categoria_nombre") @db.VarChar(100) // Campo directo
+  nombreItem       String   @map("nombre_item") @db.VarChar(150)
+  descripcion      String?  @db.Text
+  precio           Decimal  @db.Decimal(10, 2)
+  disponible       Boolean  @default(true)
+  estado           String   @default("ACTIVO") @db.VarChar(20)
   
-  items   ItemMenu[]
+  detallesPedido   DetallePedido[]
 
-  @@map("Categorias_Menu")
+  @@map("platillos")
 }
 
-// 4. Items del Menu
-model ItemMenu {
-  id          Int      @id @default(autoincrement()) @map("item_id")
-  categoriaId Int      @map("categoria_id")
-  nombreItem  String   @map("nombre_item") @db.VarChar(150)
-  descripcion String?
-  precio      Decimal  @db.Decimal(10, 2)
-  disponible  Boolean  @default(true)
-  estado      String   @default("ACTIVO") @db.VarChar(20)
-
-  categoria   CategoriaMenu @relation(fields: [categoriaId], references: [id])
-  detalles    DetallePedido[]
-  opciones    OpcionItem[]
-
-  @@map("Items_Menu")
-}
-
-// 5. Opciones Item
-model OpcionItem {
-  id           Int      @id @default(autoincrement()) @map("opcion_id")
-  itemId       Int      @map("item_id")
-  nombreOpcion String   @map("nombre_opcion") @db.VarChar(100)
-  valorOpcion  String   @map("valor_opcion") @db.VarChar(100)
-  ajustePrecio Decimal  @default(0.00) @map("ajuste_precio") @db.Decimal(10, 2)
-  estado       String   @default("ACTIVO") @db.VarChar(20)
-
-  item         ItemMenu @relation(fields: [itemId], references: [id], onDelete: Cascade)
-
-  @@map("Opciones_Item")
-}
-
-// 6. Pedidos
+// 4. Pedidos
 model Pedido {
   id              Int      @id @default(autoincrement()) @map("pedido_id")
-  usuarioId       Int      @map("usuario_id")
-  fechaPedido     DateTime @default(now()) @map("fecha_pedido")
+  usuarioCedula   String   @map("usuario_cedula") @db.VarChar(10) // FK es String
+  fechaPedido     DateTime @default(now()) @map("fecha_pedido") @db.Timestamptz
   estadoPedido    String   @default("Pendiente") @map("estado_pedido") @db.VarChar(50)
   tipoEntrega     String   @map("tipo_entrega") @db.VarChar(50)
-  direccionEntrega String  @map("direccion_entrega")
+  direccionEntrega String  @map("direccion_entrega") @db.Text
   montoTotal      Decimal  @map("monto_total") @db.Decimal(10, 2)
   estado          String   @default("ACTIVO") @db.VarChar(20)
 
-  usuario         Usuario  @relation(fields: [usuarioId], references: [id])
+  usuario         Usuario  @relation(fields: [usuarioCedula], references: [cedula])
   detalles        DetallePedido[]
 
-  @@map("Pedidos")
+  @@map("pedidos")
 }
 
-// 7. Detalles Pedido
+// 5. Detalles Pedido
 model DetallePedido {
   id              Int      @id @default(autoincrement()) @map("detalle_id")
   pedidoId        Int      @map("pedido_id")
@@ -103,11 +76,11 @@ model DetallePedido {
   cantidad        Int
   precioUnitario  Decimal  @map("precio_unitario") @db.Decimal(10, 2)
   subtotal        Decimal  @db.Decimal(10, 2)
-  notasAdicionales String? @map("notas_adicionales")
+  notasAdicionales String? @map("notas_adicionales") @db.Text
   estado          String   @default("ACTIVO") @db.VarChar(20)
 
   pedido          Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  item            ItemMenu @relation(fields: [itemId], references: [id])
+  platillo        Platillo @relation(fields: [itemId], references: [id])
 
-  @@map("Detalles_Pedido")
+  @@map("detalles_pedido")
 }

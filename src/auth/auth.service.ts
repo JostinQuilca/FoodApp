@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService, // Usamos PrismaService directo
+    private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
 
@@ -15,34 +15,26 @@ export class AuthService {
     const user = await this.prisma.usuario.findUnique({
 
       where: { email },
-      include: { rol: true }, // Traemos el rol
+      include: { rol: true },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
+    if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
-    // 1. Comparar la contraseña enviada con el hash guardado
     const isPasswordValid = await bcrypt.compare(pass, user.contrasenaHash);
-
-    if (!isPasswordValid) {
+    if (!isPasswordValid)
       throw new UnauthorizedException('Credenciales inválidas');
-    }
 
-    // 2. Devolver el usuario (sin el hash)
     const { contrasenaHash, ...result } = user;
     return result;
   }
 
   async login(loginInput: LoginInput) {
-    // Llama al validador
     const user = await this.validateUser(loginInput.email, loginInput.password);
 
-    // 1. Generar Payload del Token con el rol
     const payload = {
-      sub: user.id,
+      sub: user.cedula,
       email: user.email,
-      rol: user.rol.nombre, // El rol es clave para la autorización
+      rol: user.rol.nombre,
     };
 
     return {

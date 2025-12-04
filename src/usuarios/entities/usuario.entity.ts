@@ -11,8 +11,8 @@ export class Rol {
 
 @ObjectType()
 export class Usuario {
-  @Field(() => Int)
-  id: number;
+  @Field()
+  cedula: string; // 🚨 PK es String (Cédula)
 
   @Field()
   nombre: string;
@@ -30,8 +30,8 @@ export class Usuario {
   telefono?: string;
 
   @Field()
-  estado: string; // ACTIVO / INACTIVO
+  estado: string;
 
   @Field(() => Rol)
-  rol: Rol; // Objeto de Rol (ADMINISTRADOR o CLIENTE)
+  rol: Rol;
 }
