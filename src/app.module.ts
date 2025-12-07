@@ -8,6 +8,11 @@ import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { PlatillosModule } from './platillos/platillos.module';
+import { RolesModule } from './roles/roles.module';
+import { PedidosModule } from './pedidos/pedidos.module';
+import { DetallesPedidoModule } from './detalles_pedido/detalles_pedido.module';
+
 
 @Module({
   imports: [
@@ -25,6 +30,10 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     PrismaModule, // <--- Ahora lo encuentra
     AuthModule,
     UsuariosModule,
+    PlatillosModule,
+    RolesModule,
+    PedidosModule,
+    DetallesPedidoModule,
   ],
   // Controllers y Providers son opcionales aquí si no usamos rutas REST
 })

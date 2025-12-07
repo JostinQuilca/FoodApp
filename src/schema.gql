@@ -5,6 +5,8 @@
 type Rol {
   id: Int!
   nombre: String!
+  estado: String!
+  usuarios: [Usuario!]
 }
 
 type Usuario {
@@ -23,19 +25,80 @@ type LoginResponse {
   user: Usuario!
 }
 
+type Platillo {
+  id: Int!
+  categoriaNombre: String!
+  nombreItem: String!
+  descripcion: String
+  precio: Float!
+  disponible: Boolean!
+  estado: String!
+}
+
+type DetallePedido {
+  id: Int!
+  pedidoId: Int!
+  itemId: Int!
+  cantidad: Int!
+  precioUnitario: Float!
+  subtotal: Float!
+  notasAdicionales: String
+  estado: String!
+  pedido: Pedido!
+  platillo: Platillo!
+}
+
+type Pedido {
+  id: Int!
+  usuarioCedula: String!
+  fechaPedido: DateTime!
+  estadoPedido: String!
+  tipoEntrega: String!
+  direccionEntrega: String!
+  montoTotal: Float!
+  estado: String!
+  usuario: Usuario!
+  detalles: [DetallePedido!]!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Query {
   usuarios: [Usuario!]!
+  platillos: [Platillo!]!
+  platillo(id: Int!): Platillo!
+  roles: [Rol!]!
+  rol(id: Int!): Rol!
+  pedidos: [Pedido!]!
+  pedido(id: Int!): Pedido!
+  detallesPedido: [DetallePedido!]!
+  detallePedido(id: Int!): DetallePedido!
 }
 
 type Mutation {
   login(loginInput: LoginInput!): LoginResponse!
   register(createUsuarioInput: CreateUsuarioInput!): Usuario!
+  createPlatillo(createPlatilloInput: CreatePlatilloInput!): Platillo!
+  updatePlatillo(updatePlatilloInput: UpdatePlatilloInput!): Platillo!
+  removePlatillo(id: Int!): Platillo!
+  createRol(createRolInput: CreateRolInput!): Rol!
+  updateRol(updateRolInput: UpdateRolInput!): Rol!
+  removeRol(id: Int!): Rol!
+  createPedido(createPedidoInput: CreatePedidoInput!): Pedido!
+  updatePedido(updatePedidoInput: UpdatePedidoInput!): Pedido!
+  removePedido(id: Int!): Pedido!
+  createDetallePedido(createDetallePedidoInput: CreateDetallePedidoInput!): DetallePedido!
+  updateDetallePedido(updateDetallePedidoInput: UpdateDetallePedidoInput!): DetallePedido!
+  removeDetallePedido(id: Int!): DetallePedido!
 }
 
 input LoginInput {
   email: String!
   password: String!
-}                                                                       
+}
 
 input CreateUsuarioInput {
   cedula: String!
@@ -46,4 +109,75 @@ input CreateUsuarioInput {
   apellido: String
   telefono: String
   rolId: Int!
+}
+
+input CreatePlatilloInput {
+  categoriaNombre: String!
+  nombreItem: String!
+  descripcion: String
+  precio: Float!
+  disponible: Boolean
+  estado: String
+}
+
+input UpdatePlatilloInput {
+  categoriaNombre: String
+  nombreItem: String
+  descripcion: String
+  precio: Float
+  disponible: Boolean
+  estado: String
+  id: Int!
+}
+
+input CreateRolInput {
+  nombre: String!
+  estado: String
+}
+
+input UpdateRolInput {
+  nombre: String
+  estado: String
+  id: Int!
+}
+
+input CreatePedidoInput {
+  usuarioCedula: String!
+  tipoEntrega: String!
+  direccionEntrega: String!
+  montoTotal: Float!
+  estadoPedido: String
+  estado: String
+}
+
+input UpdatePedidoInput {
+  usuarioCedula: String
+  tipoEntrega: String
+  direccionEntrega: String
+  montoTotal: Float
+  estadoPedido: String
+  estado: String
+  id: Int!
+  fechaPedido: DateTime
+}
+
+input CreateDetallePedidoInput {
+  pedidoId: Int!
+  itemId: Int!
+  cantidad: Int!
+  precioUnitario: Float!
+  subtotal: Float!
+  notasAdicionales: String
+  estado: String
+}
+
+input UpdateDetallePedidoInput {
+  pedidoId: Int
+  itemId: Int
+  cantidad: Int
+  precioUnitario: Float
+  subtotal: Float
+  notasAdicionales: String
+  estado: String
+  id: Int!
 }

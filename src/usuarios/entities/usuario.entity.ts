@@ -1,18 +1,10 @@
-import { ObjectType, Field, Int } from '@nestjs/graphql';
-
-@ObjectType()
-export class Rol {
-  @Field(() => Int)
-  id: number;
-
-  @Field()
-  nombre: string;
-}
+import { ObjectType, Field } from '@nestjs/graphql';
+import { Rol } from 'src/roles/entities/rol.entity';
 
 @ObjectType()
 export class Usuario {
   @Field()
-  cedula: string; // 🚨 PK es String (Cédula)
+  cedula: string;
 
   @Field()
   nombre: string;
