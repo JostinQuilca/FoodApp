@@ -32,7 +32,7 @@ model Usuario {
 
   rol               Rol       @relation(fields: [rolId], references: [id])
   pedidos           Pedido[]
-
+  auditorias        Auditoria[]
   @@map("usuarios")
 }
 
@@ -83,4 +83,20 @@ model DetallePedido {
   platillo        Platillo @relation(fields: [itemId], references: [id])
 
   @@map("detalles_pedido")
+}
+// 6. Auditoria (Registro de cambios)
+model Auditoria {
+  id              Int      @id @default(autoincrement()) @map("auditoria_id")
+  usuarioCedula   String   @map("usuario_cedula") @db.VarChar(10)
+  fechaHora       DateTime @default(now()) @map("fecha_hora") @db.Timestamptz
+  tipoAccion      String   @map("tipo_accion") @db.VarChar(50)
+  nombreTabla     String   @map("nombre_tabla") @db.VarChar(100)
+  registroId      String   @map("registro_id") @db.Text  // TEXT para flexibilidad
+  datosAnteriores Json?    @map("datos_anteriores")  // JSONB como Json opcional
+  datosNuevos     Json?    @map("datos_nuevos")      // JSONB como Json opcional
+
+
+  usuario         Usuario  @relation(fields: [usuarioCedula], references: [cedula])
+
+  @@map("auditoria")
 }

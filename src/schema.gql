@@ -66,6 +66,23 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type Auditoria {
+  id: Int!
+  usuarioCedula: String!
+  fechaHora: DateTime!
+  tipoAccion: String!
+  nombreTabla: String!
+  registroId: String!
+  datosAnteriores: JSON
+  datosNuevos: JSON
+  usuario: Usuario!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
 type Query {
   usuarios: [Usuario!]!
   platillos: [Platillo!]!
@@ -76,6 +93,9 @@ type Query {
   pedido(id: Int!): Pedido!
   detallesPedido: [DetallePedido!]!
   detallePedido(id: Int!): DetallePedido!
+  auditorias: [Auditoria!]!
+  auditoria(id: Int!): Auditoria
+  auditoriasPorUsuarioCedula(usuarioCedula: String!): [Auditoria!]!
 }
 
 type Mutation {
@@ -93,6 +113,7 @@ type Mutation {
   createDetallePedido(createDetallePedidoInput: CreateDetallePedidoInput!): DetallePedido!
   updateDetallePedido(updateDetallePedidoInput: UpdateDetallePedidoInput!): DetallePedido!
   removeDetallePedido(id: Int!): DetallePedido!
+  create(createAuditoriaInput: CreateAuditoriaInput!): Auditoria!
 }
 
 input LoginInput {
@@ -180,4 +201,13 @@ input UpdateDetallePedidoInput {
   notasAdicionales: String
   estado: String
   id: Int!
+}
+
+input CreateAuditoriaInput {
+  usuarioCedula: String!
+  tipoAccion: String!
+  nombreTabla: String!
+  registroId: String!
+  datosAnteriores: JSON
+  datosNuevos: JSON
 }

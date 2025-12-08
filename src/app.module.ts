@@ -12,6 +12,7 @@ import { PlatillosModule } from './platillos/platillos.module';
 import { RolesModule } from './roles/roles.module';
 import { PedidosModule } from './pedidos/pedidos.module';
 import { DetallesPedidoModule } from './detalles_pedido/detalles_pedido.module';
+import { AuditoriaModule } from './auditoria/auditoria.module';
 
 
 @Module({
@@ -34,6 +35,7 @@ import { DetallesPedidoModule } from './detalles_pedido/detalles_pedido.module';
     RolesModule,
     PedidosModule,
     DetallesPedidoModule,
+    AuditoriaModule,
   ],
   // Controllers y Providers son opcionales aquí si no usamos rutas REST
 })
