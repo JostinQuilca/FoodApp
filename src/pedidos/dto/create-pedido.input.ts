@@ -1,7 +1,25 @@
-import { InputType, Field, Float } from '@nestjs/graphql';
-import { DetallePedido } from 'src/detalles_pedido/entities/detalles_pedido.entity';
-import { Usuario } from 'src/usuarios/entities/usuario.entity';
+import { InputType, Field, Float, Int } from '@nestjs/graphql';
 
+// 1. Definimos el input para CADA item de la lista (el detalle)
+@InputType()
+class PedidoDetalleItemInput {
+  @Field(() => Int)
+  itemId: number;
+
+  @Field(() => Int)
+  cantidad: number;
+
+  @Field(() => Float)
+  precioUnitario: number;
+
+  @Field(() => Float)
+  subtotal: number;
+
+  @Field({ nullable: true })
+  notasAdicionales?: string;
+}
+
+// 2. Actualizamos el input principal del Pedido
 @InputType()
 export class CreatePedidoInput {
   @Field()
@@ -16,13 +34,16 @@ export class CreatePedidoInput {
   @Field(() => Float)
   montoTotal: number;
 
-  // Opcional: puedes permitir setear estadoPedido en la creación
+
   @Field({ nullable: true })
   estadoPedido?: string;
 
-  // Opcional: estado general del registro
+  
   @Field({ nullable: true })
   estado?: string;
 
-
+  // 🚨 ESTE ES EL CAMPO QUE TE FALTABA 🚨
+  // Le decimos a GraphQL que este campo es un Array ([]) de la clase de arriba
+  @Field(() => [PedidoDetalleItemInput]) 
+  detalles: PedidoDetalleItemInput[];
 }
