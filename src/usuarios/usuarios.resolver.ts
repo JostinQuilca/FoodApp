@@ -12,6 +12,10 @@ export class UsuariosResolver {
   register(@Args('createUsuarioInput') createUsuarioInput: CreateUsuarioInput) {
     return this.usuariosService.create(createUsuarioInput);
   }
+    @Query(() => [Usuario], { name: 'usuariosPorRol' })
+  findByRol(@Args('rolId', { type: () => Int }) rolId: number) {
+    return this.usuariosService.findByRolId(rolId);
+  }
 
   // QUERY: Permite a los administradores ver la lista de usuarios
   @Query(() => [Usuario], { name: 'usuarios' })

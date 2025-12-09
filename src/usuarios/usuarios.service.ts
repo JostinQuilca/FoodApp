@@ -55,6 +55,12 @@ export class UsuariosService {
   async findAll() {
     return this.prisma.usuario.findMany({ include: { rol: true } });
   }
+  async findByRolId(rolId: number) {
+    return this.prisma.usuario.findMany({
+     where: { rolId },
+      include: { rol: true },
+    });
+  }
 
   async findOneByEmail(email: string) {
     return this.prisma.usuario.findUnique({
