@@ -22,10 +22,18 @@ export class PedidosService {
 }
 
   async findAll() {
-    return this.prisma.pedido.findMany({
-      include: { usuario: true, detalles: true },
-    });
-  }
+  return this.prisma.pedido.findMany({
+    include: {
+      usuario: true,
+      detalles: {
+        include: {
+          platillo: true,   // 👈 esto asegura que cada detalle traiga su platillo
+        },
+      },
+    },
+  });
+}
+
 
   async findOne(id: number) {
     return this.prisma.pedido.findUnique({
