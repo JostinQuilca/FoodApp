@@ -38,12 +38,11 @@ export class CreatePedidoInput {
   @Field({ nullable: true })
   estadoPedido?: string;
 
-  
+
   @Field({ nullable: true })
   estado?: string;
 
-  // 🚨 ESTE ES EL CAMPO QUE TE FALTABA 🚨
-  // Le decimos a GraphQL que este campo es un Array ([]) de la clase de arriba
+
   @Field(() => [PedidoDetalleItemInput]) 
   detalles: PedidoDetalleItemInput[];
 }
