@@ -1,34 +1,53 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
-import { CreateAuditoriaInput } from './dto/create-auditoria.input';
 
 @Injectable()
 export class AuditoriaService {
   constructor(private prisma: PrismaService) {}
 
-  
-  async create(data: CreateAuditoriaInput) {
-  return this.prisma.auditoria.create({
-    data,
-    include: { usuario: true },
-  });
-}
-async findByUsuarioCedula(usuarioCedula: string) {
-  return this.prisma.auditoria.findMany({
-    where: { usuarioCedula },
-    include: { usuario: true },
-  });
-}
-  async findAll() {
-    return this.prisma.auditoria.findMany({ include: { usuario: true } });
+  /**
+   * Registra una acción en la tabla de auditoría.
+   * @param usuarioCedula - Cédula del usuario que realizó la acción.
+   * @param tipoAccion - Tipo de operación (ej. 'LOGIN_SUCCESS', 'LOGIN_FAILURE', 'UPDATE_USUARIO').
+   * @param nombreTabla - Nombre de la tabla afectada.
+   * @param registroId - ID del registro afectado.
+   * @param datosAnteriores - JSON con datos previos (opcional).
+   * @param datosNuevos - JSON con datos nuevos (opcional).
+   */
+  async logAction(
+    usuarioCedula: string,
+    tipoAccion: string,
+    nombreTabla: string,
+    registroId: string,
+    datosAnteriores: any = null,
+    datosNuevos: any = null,
+  ) {
+    try {
+      await this.prisma.auditoria.create({
+        data: {
+          usuarioCedula: usuarioCedula,          // ✔ coincide con tu schema
+          tipoAccion: tipoAccion,                // ✔
+          nombreTabla: nombreTabla,              // ✔
+          registroId: registroId,                // ✔
+          fechaHora: new Date(),                 // ✔ campo real en tu model
+          datosAnteriores: datosAnteriores ?? null,  // JSONB
+          datosNuevos: datosNuevos ?? null,          // JSONB
+        },
+      });
+    } catch (error) {
+      console.error(
+        `ERROR registrando auditoría (${tipoAccion}) para ${usuarioCedula}:`,
+        error,
+      );
+    }
   }
 
-  async findOne(id: number) {
-    return this.prisma.auditoria.findUnique({ where: { id }, include: { usuario: true } });
+  /**
+   * Devuelve todos los registros de auditoría, ordenados de más reciente a más antiguo.
+   */
+  async getAll() {
+    return this.prisma.auditoria.findMany({
+      orderBy: { fechaHora: 'desc' },
+    });
   }
-
-  // No update/delete típicos para logs, pero si quieres:
-  // async update(id: number, data: Prisma.AuditoriaUpdateInput) { ... }
-  // async remove(id: number) { ... }
 }
