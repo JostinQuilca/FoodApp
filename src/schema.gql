@@ -94,6 +94,7 @@ type Query {
 type Mutation {
   login(loginInput: LoginInput!): LoginResponse!
   register(createUsuarioInput: CreateUsuarioInput!): Usuario!
+  cambiarEstadoUsuario(cedula: String!, nuevoEstado: String!): Usuario!
   createPlatillo(createPlatilloInput: CreatePlatilloInput!): Platillo!
   updatePlatillo(updatePlatilloInput: UpdatePlatilloInput!): Platillo!
   removePlatillo(id: Int!): Platillo!

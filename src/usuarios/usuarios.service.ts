@@ -61,7 +61,13 @@ export class UsuariosService {
       include: { rol: true },
     });
   }
-
+async updateEstado(cedula: string, nuevoEstado: string) {
+  return this.prisma.usuario.update({
+    where: { cedula },
+    data: { estado: nuevoEstado },
+    include: { rol: true },
+  });
+}
   async findOneByEmail(email: string) {
     return this.prisma.usuario.findUnique({
       where: { email },
