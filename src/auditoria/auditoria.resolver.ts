@@ -4,7 +4,7 @@ import { Auditoria } from './auditoria.entity';
 
 @Resolver(() => Auditoria)
 export class AuditoriaResolver {
-  constructor(private auditoriaService: AuditoriaService) {}
+  constructor(private readonly auditoriaService: AuditoriaService) {}
 
   @Query(() => [Auditoria], { name: 'auditorias' })
   findAll() {

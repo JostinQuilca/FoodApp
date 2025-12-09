@@ -1,10 +1,16 @@
 import { Module } from '@nestjs/common';
 import { AuditoriaService } from './auditoria.service';
-import { PrismaModule } from '../prisma/prisma.module'; // Importa el módulo de Prisma para el servicio
+import { AuditoriaResolver } from './auditoria.resolver';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
-  imports: [PrismaModule], // Asegura que Prisma esté disponible para el AuditoriaService
-  providers: [AuditoriaService],
-  exports: [AuditoriaService], // Exporta el servicio para que otros módulos lo puedan usar
+  providers: [
+    AuditoriaService,
+    AuditoriaResolver,
+    PrismaService
+  ],
+  exports: [
+    AuditoriaService   // 🔥 NECESARIO PARA QUE AuthModule pueda usarlo
+  ]
 })
 export class AuditoriaModule {}

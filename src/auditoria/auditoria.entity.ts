@@ -9,9 +9,6 @@ export class Auditoria {
   usuarioCedula: string;
 
   @Field()
-  fechaHora: Date;
-
-  @Field()
   tipoAccion: string;
 
   @Field()
@@ -19,6 +16,9 @@ export class Auditoria {
 
   @Field()
   registroId: string;
+
+  @Field()
+  fechaHora: Date;
 
   @Field(() => String, { nullable: true })
   datosAnteriores?: any;
