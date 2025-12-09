@@ -10,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
     PrismaService
   ],
   exports: [
-    AuditoriaService   // 🔥 NECESARIO PARA QUE AuthModule pueda usarlo
+    AuditoriaService   
   ]
 })
 export class AuditoriaModule {}
