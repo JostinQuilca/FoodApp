@@ -13,4 +13,5 @@ import { PrismaService } from '../prisma/prisma.service';
     AuditoriaService   
   ]
 })
+
 export class AuditoriaModule {}
