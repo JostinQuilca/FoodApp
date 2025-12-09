@@ -16,6 +16,13 @@ export class UsuariosResolver {
   findByRol(@Args('rolId', { type: () => Int }) rolId: number) {
     return this.usuariosService.findByRolId(rolId);
   }
+@Mutation(() => Usuario, { name: 'cambiarEstadoUsuario' })
+  cambiarEstadoUsuario(
+    @Args('cedula') cedula: string,
+    @Args('nuevoEstado') nuevoEstado: string,
+  ) {
+    return this.usuariosService.updateEstado(cedula, nuevoEstado);
+  }
 
   // QUERY: Permite a los administradores ver la lista de usuarios
   @Query(() => [Usuario], { name: 'usuarios' })
