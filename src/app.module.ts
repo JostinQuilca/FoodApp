@@ -14,7 +14,6 @@ import { PedidosModule } from './pedidos/pedidos.module';
 import { DetallesPedidoModule } from './detalles_pedido/detalles_pedido.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 
-
 @Module({
   imports: [
     // 1. Configuración Global (.env)
@@ -25,6 +24,7 @@ import { AuditoriaModule } from './auditoria/auditoria.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
+      introspection: true,
     }),
 
     // 3. Módulos de la Aplicación
