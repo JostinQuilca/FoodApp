@@ -13,6 +13,7 @@ import { RolesModule } from './roles/roles.module';
 import { PedidosModule } from './pedidos/pedidos.module';
 import { DetallesPedidoModule } from './detalles_pedido/detalles_pedido.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
+import { FacturacionModule } from './facturacion/facturacion.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AuditoriaModule } from './auditoria/auditoria.module';
     PedidosModule,
     DetallesPedidoModule,
     AuditoriaModule,
+    FacturacionModule,
   ],
   // Controllers y Providers son opcionales aquí si no usamos rutas REST
 })

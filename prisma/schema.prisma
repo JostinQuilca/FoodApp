@@ -32,6 +32,7 @@ model Usuario {
 
   rol               Rol       @relation(fields: [rolId], references: [id])
   pedidos           Pedido[]
+  facturas          Factura[]
   auditorias        Auditoria[]
   @@map("usuarios")
 }
@@ -47,6 +48,7 @@ model Platillo {
   estado           String   @default("ACTIVO") @db.VarChar(20)
   
   detallesPedido   DetallePedido[]
+  detallesFactura  DetalleFactura[]
 
   @@map("platillos")
 }
@@ -64,6 +66,7 @@ model Pedido {
 
   usuario         Usuario  @relation(fields: [usuarioCedula], references: [cedula])
   detalles        DetallePedido[]
+  factura         Factura?
 
   @@map("pedidos")
 }
@@ -99,4 +102,51 @@ model Auditoria {
   usuario         Usuario  @relation(fields: [usuarioCedula], references: [cedula])
 
   @@map("auditoria")
+}
+
+// 7. Factura (Facturación automática o directa)
+model Factura {
+  id                Int      @id @default(autoincrement()) @map("factura_id")
+  usuarioCedula     String   @map("usuario_cedula") @db.VarChar(10)
+  pedidoId          Int?     @map("pedido_id") @unique // FK opcional, UNIQUE para evitar duplicados
+  numeroFactura     String   @unique @map("numero_factura") @db.VarChar(50)
+  fechaFactura      DateTime @default(now()) @map("fecha_factura") @db.Timestamptz
+  fechaVencimiento  DateTime? @map("fecha_vencimiento") @db.Timestamptz
+  montoSubtotal     Decimal  @map("monto_subtotal") @db.Decimal(10, 2)
+  montoIva          Decimal  @default(0.00) @map("monto_iva") @db.Decimal(10, 2)
+  montoTotal        Decimal  @map("monto_total") @db.Decimal(10, 2)
+  estadoFactura     String   @default("EMITIDA") @map("estado_factura") @db.VarChar(50) // EMITIDA, PAGADA, ANULADA
+  tipoFactura       String   @default("VENTA") @map("tipo_factura") @db.VarChar(50) // VENTA (directa) o PEDIDO (automática)
+  descripcion       String?  @db.Text
+  estado            String   @default("ACTIVO") @db.VarChar(20)
+
+  usuario           Usuario  @relation(fields: [usuarioCedula], references: [cedula])
+  pedido            Pedido?  @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+  detalles          DetalleFactura[]
+
+  @@map("factura")
+  @@index([usuarioCedula])
+  @@index([estadoFactura])
+  @@index([tipoFactura])
+  @@index([fechaFactura])
+}
+
+// 8. Detalle Factura (Líneas de factura)
+model DetalleFactura {
+  id                Int      @id @default(autoincrement()) @map("detalle_factura_id")
+  facturaId         Int      @map("factura_id")
+  itemId            Int      @map("item_id")
+  cantidad          Int
+  precioUnitario    Decimal  @map("precio_unitario") @db.Decimal(10, 2)
+  subtotal          Decimal  @db.Decimal(10, 2)
+  descripcionItem   String?  @map("descripcion_item") @db.Text
+  notas             String?  @db.Text
+  estado            String   @default("ACTIVO") @db.VarChar(20)
+
+  factura           Factura  @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  platillo          Platillo @relation(fields: [itemId], references: [id])
+
+  @@map("detalle_factura")
+  @@index([facturaId])
+  @@index([itemId])
 }

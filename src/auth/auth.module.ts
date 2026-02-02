@@ -11,6 +11,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -43,9 +45,11 @@ import { PrismaModule } from '../prisma/prisma.module';
   providers: [
     AuthService,
     AuthResolver,
+    JwtStrategy,
+    JwtAuthGuard,
   ],
 
   // Exportaciones en caso de que otro módulo necesite AuthService
-  exports: [AuthService],
+  exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}

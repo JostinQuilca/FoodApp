@@ -75,6 +75,13 @@ async updateEstado(cedula: string, nuevoEstado: string) {
     });
   }
 
+  async findByCedula(cedula: string) {
+    return this.prisma.usuario.findUnique({
+      where: { cedula },
+      include: { rol: true },
+    });
+  }
+
   // Métodos placeholder para el CRUD
   findOne(id: number) {
     return null;

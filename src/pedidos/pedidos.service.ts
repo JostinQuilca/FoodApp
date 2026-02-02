@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePedidoInput } from './dto/create-pedido.input';
 import { UpdatePedidoInput } from './dto/update-pedido.input';
+import { FacturacionService } from '../facturacion/facturacion.service';
 
 @Injectable()
 export class PedidosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Optional()
+    private readonly facturacionService?: FacturacionService,
+  ) {}
 
   async create(data: CreatePedidoInput) {
     // Extraemos los detalles del objeto principal
@@ -66,7 +71,12 @@ export class PedidosService {
   }
 
   async update(id: number, updatePedidoInput: UpdatePedidoInput) {
-    return this.prisma.pedido.update({
+    const pedidoActual = await this.prisma.pedido.findUnique({
+      where: { id },
+      include: { factura: true },
+    });
+
+    const pedidoActualizado = await this.prisma.pedido.update({
       where: { id },
       data: {
         tipoEntrega: updatePedidoInput.tipoEntrega,
@@ -75,8 +85,26 @@ export class PedidosService {
         estadoPedido: updatePedidoInput.estadoPedido,
         estado: updatePedidoInput.estado,
       },
-      include: { usuario: true, detalles: true },
+      include: { usuario: true, detalles: { include: { platillo: true } } },
     });
+
+    // RF-01: Generar factura automáticamente si el estado cambia a "Autorizado"
+    if (
+      pedidoActual &&
+      updatePedidoInput.estadoPedido === 'Autorizado' &&
+      pedidoActual.estadoPedido !== 'Autorizado' &&
+      !pedidoActual.factura &&
+      this.facturacionService
+    ) {
+      try {
+        await this.facturacionService.generarFacturaDesdeoPedido(id);
+      } catch (error) {
+        // Log pero no falla - la factura es un proceso secundario
+        console.error(`Error generando factura automática para pedido ${id}:`, error.message);
+      }
+    }
+
+    return pedidoActualizado;
   }
 
   async remove(id: number) {

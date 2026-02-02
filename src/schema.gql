@@ -82,6 +82,35 @@ type Pedido {
   detalles: [DetallePedido!]!
 }
 
+type DetalleFactura {
+  id: Int!
+  factura: Factura!
+  platillo: Platillo!
+  cantidad: Int!
+  precioUnitario: Float!
+  subtotal: Float!
+  descripcionItem: String
+  notas: String
+  estado: String!
+}
+
+type Factura {
+  id: Int!
+  numeroFactura: String!
+  usuario: Usuario!
+  pedido: Pedido
+  fechaFactura: DateTime!
+  fechaVencimiento: DateTime
+  montoSubtotal: Float!
+  montoIva: Float!
+  montoTotal: Float!
+  estadoFactura: String!
+  tipoFactura: String!
+  descripcion: String
+  estado: String!
+  detalles: [DetalleFactura!]
+}
+
 type Query {
   usuariosPorRol(rolId: Int!): [Usuario!]!
   usuarios: [Usuario!]!
@@ -92,6 +121,11 @@ type Query {
   rol(id: Int!): Rol!
   pedidos: [Pedido!]!
   pedido(id: Int!): Pedido!
+  misFacturas: [Factura!]!
+  todasLasFacturas: [Factura!]!
+  obtenerFactura(id: Int!): Factura
+  facturasPorEstado(estado: String!): [Factura!]!
+  facturasDelMes: [Factura!]!
   detallesPedido: [DetallePedido!]!
   detallePedido(id: Int!): DetallePedido!
 }
@@ -109,6 +143,9 @@ type Mutation {
   createPedido(createPedidoInput: CreatePedidoInput!): Pedido!
   updatePedido(updatePedidoInput: UpdatePedidoInput!): Pedido!
   removePedido(id: Int!): Pedido!
+  crearFacturaDirecta(input: CreateFacturaInput!): Factura!
+  actualizarEstadoFactura(id: Int!, input: UpdateFacturaInput!): Factura!
+  anularFactura(id: Int!): Factura!
   createDetallePedido(createDetallePedidoInput: CreateDetallePedidoInput!): DetallePedido!
   updateDetallePedido(updateDetallePedidoInput: UpdateDetallePedidoInput!): DetallePedido!
   removeDetallePedido(id: Int!): DetallePedido!
@@ -188,6 +225,24 @@ input UpdatePedidoInput {
   detalles: [PedidoDetalleItemInput!]
   id: Int!
   fechaPedido: DateTime
+}
+
+input CreateFacturaInput {
+  usuarioCedula: String!
+  detalles: [CreateDetalleFacturaInput!]!
+  descripcion: String
+  montoIva: Float
+}
+
+input CreateDetalleFacturaInput {
+  itemId: Int!
+  cantidad: Int!
+  precioUnitario: Float!
+}
+
+input UpdateFacturaInput {
+  estadoFactura: String
+  descripcion: String
 }
 
 input CreateDetallePedidoInput {
