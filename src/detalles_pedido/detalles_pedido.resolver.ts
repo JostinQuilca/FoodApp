@@ -12,7 +12,8 @@ export class DetallesPedidoResolver {
   createDetallePedido(
     @Args('createDetallePedidoInput') createDetallePedidoInput: CreateDetallePedidoInput,
   ) {
-    return this.detallesPedidoService.create(createDetallePedidoInput);
+    const usuarioCedula="1005277489";
+    return this.detallesPedidoService.create(createDetallePedidoInput,usuarioCedula);
   }
 
   @Query(() => [DetallePedido], { name: 'detallesPedido' })
@@ -29,7 +30,8 @@ export class DetallesPedidoResolver {
   updateDetallePedido(
     @Args('updateDetallePedidoInput') updateDetallePedidoInput: UpdateDetallePedidoInput,
   ) {
-    return this.detallesPedidoService.update(updateDetallePedidoInput.id, updateDetallePedidoInput);
+    const usuarioCedula="1005277489";
+    return this.detallesPedidoService.update(updateDetallePedidoInput.id,usuarioCedula, updateDetallePedidoInput);
   }
 
   @Mutation(() => DetallePedido)

@@ -4,6 +4,7 @@ import { PlatillosResolver } from './platillos.resolver';
 import { AuditoriaModule } from '../auditoria/auditoria.module'; 
 
 @Module({
-  providers: [PlatillosService, PlatillosResolver, AuditoriaModule]
+  providers: [PlatillosService, PlatillosResolver],
+  imports:[AuditoriaModule]
 })
 export class PlatillosModule {}

@@ -1,10 +1,10 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int, Context } from '@nestjs/graphql';
 import { PlatillosService } from './platillos.service';
 import { Platillo } from './entities/platillo.entity';
 import { CreatePlatilloInput } from './dto/create-platillo.input';
 import { UpdatePlatilloInput } from './dto/update-platillo.input';
 import { UseGuards } from '@nestjs/common';  // Para auth
-//import { JwtAuthGuard } from '../auth/jwt-auth.guard';  // Asume que existe
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';  // Asume que existe
 
 @Resolver(() => Platillo)
 export class PlatillosResolver {
@@ -12,8 +12,10 @@ export class PlatillosResolver {
 
   @Mutation(() => Platillo)
   //@UseGuards(JwtAuthGuard)  // Protege con auth
-  createPlatillo(@Args('createPlatilloInput') createPlatilloInput: CreatePlatilloInput) {
-    return this.platillosService.create(createPlatilloInput);
+  createPlatillo(@Args('createPlatilloInput') createPlatilloInput: CreatePlatilloInput,@Context() context:any) {
+    //const usuarioCedula = context.req.user.cedula;
+    const usuarioCedula="1005277489"
+    return this.platillosService.create(createPlatilloInput,usuarioCedula);
   }
 
   @Query(() => [Platillo], { name: 'platillos' })
@@ -29,9 +31,10 @@ export class PlatillosResolver {
   @Mutation(() => Platillo)
   //@UseGuards(JwtAuthGuard)
   updatePlatillo(
-    @Args('updatePlatilloInput') updatePlatilloInput: UpdatePlatilloInput,
+    @Args('updatePlatilloInput') updatePlatilloInput: UpdatePlatilloInput,@Context() context:any
   ) {
-    return this.platillosService.update(updatePlatilloInput.id, updatePlatilloInput);
+    const usuarioCedula="1005277489"
+    return this.platillosService.update(updatePlatilloInput.id,usuarioCedula, updatePlatilloInput);
   }
 
   @Mutation(() => Platillo)
