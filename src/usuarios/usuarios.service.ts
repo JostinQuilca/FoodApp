@@ -1,11 +1,14 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateUsuarioInput } from './dto/create-usuario.input';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 import * as bcrypt from 'bcrypt'; // Necesario para el hash
 
 @Injectable()
 export class UsuariosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService,
+    private auditoriaService: AuditoriaService
+  ) {}
 
   async create(input: CreateUsuarioInput) {
     // 1. Encriptar la contraseña
@@ -62,11 +65,40 @@ export class UsuariosService {
     });
   }
 async updateEstado(cedula: string, nuevoEstado: string) {
-  return this.prisma.usuario.update({
+
+  const usuarioAnterior = await this.prisma.usuario.findUnique({
     where: { cedula },
-    data: { estado: nuevoEstado },
+  });
+
+  if (!usuarioAnterior) {
+    throw new Error(`No se puede actualizar: El usuario con cédula ${cedula} no existe.`);
+  }
+
+  const usuarioActualizado = await this.prisma.usuario.update({
+    where: { cedula },
+    data: {estado:nuevoEstado},
     include: { rol: true },
   });
+  try {
+    await this.auditoriaService.logAction(
+      cedula, 
+      'UPDATE', // Tipo de acción
+      'usuarios',       // Tabla afectada
+      cedula,           // ID del registro (en este caso la cédula)
+      {estado:usuarioAnterior.estado},  // Datos viejos (lo que buscamos en el paso 1)
+      {estado:usuarioActualizado.estado} // Datos nuevos (lo que devolvió el update)
+    );
+  } catch (error) {
+    console.error('Error al auditar actualización:', error);
+  }
+
+  return usuarioActualizado;
+
+  // return this.prisma.usuario.update({
+  //   where: { cedula },
+  //   data: { estado: nuevoEstado },
+  //   include: { rol: true },
+  // });
 }
   async findOneByEmail(email: string) {
     return this.prisma.usuario.findUnique({

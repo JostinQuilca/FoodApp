@@ -3,20 +3,22 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePedidoInput } from './dto/create-pedido.input';
 import { UpdatePedidoInput } from './dto/update-pedido.input';
 import { FacturacionService } from '../facturacion/facturacion.service';
+import { AuditoriaService } from '@/auditoria/auditoria.service';
 
 @Injectable()
 export class PedidosService {
   constructor(
     private prisma: PrismaService,
+    private auditoriaService: AuditoriaService,
     @Optional()
-    private readonly facturacionService?: FacturacionService,
-  ) {}
+    private readonly facturacionService?: FacturacionService){}
+
 
   async create(data: CreatePedidoInput) {
     // Extraemos los detalles del objeto principal
     const { detalles, ...pedidoData } = data;
 
-    return this.prisma.pedido.create({
+    const pedido= await this.prisma.pedido.create({
       data: {
         // Mapeamos los campos del Pedido (Maestro)
         usuarioCedula: pedidoData.usuarioCedula,
@@ -47,6 +49,19 @@ export class PedidosService {
         } 
       },
     });
+    try {
+    await this.auditoriaService.logAction(
+      pedido.usuarioCedula, 
+      'INSERT', // Tipo de acción
+      'pedidos',       // Tabla afectada
+      pedido.id.toString(),           // ID del registro (en este caso la cédula)
+      null,  // Datos viejos (lo que buscamos en el paso 1)
+      pedido // Datos nuevos (lo que devolvió el update)
+    );
+  } catch (error) {
+    console.error('Error al auditar creación: ', error);
+  }
+    return pedido;
   }
 
   // ... resto de métodos (findAll, findOne, update, remove) se mantienen igual
@@ -71,12 +86,13 @@ export class PedidosService {
   }
 
   async update(id: number, updatePedidoInput: UpdatePedidoInput) {
-    const pedidoActual = await this.prisma.pedido.findUnique({
+    const pedidoAnterior = await this.prisma.pedido.findUnique({
       where: { id },
       include: { factura: true },
     });
+    
+    const pedidoActualizado= await this.prisma.pedido.update({
 
-    const pedidoActualizado = await this.prisma.pedido.update({
       where: { id },
       data: {
         tipoEntrega: updatePedidoInput.tipoEntrega,
@@ -90,10 +106,10 @@ export class PedidosService {
 
     // RF-01: Generar factura automáticamente si el estado cambia a "Autorizado"
     if (
-      pedidoActual &&
+      pedidoAnterior &&
       updatePedidoInput.estadoPedido === 'Autorizado' &&
-      pedidoActual.estadoPedido !== 'Autorizado' &&
-      !pedidoActual.factura &&
+      pedidoAnterior.estadoPedido !== 'Autorizado' &&
+      !pedidoAnterior.factura &&
       this.facturacionService
     ) {
       try {
@@ -104,6 +120,18 @@ export class PedidosService {
       }
     }
 
+    try {
+    await this.auditoriaService.logAction(
+      pedidoActualizado.usuarioCedula, 
+      'UPDATE', // Tipo de acción
+      'pedidos',       // Tabla afectada
+      pedidoActualizado.id.toString(),           // ID del registro (en este caso la cédula)
+      pedidoAnterior,  // Datos viejos (lo que buscamos en el paso 1)
+      pedidoActualizado // Datos nuevos (lo que devolvió el update)
+    );
+  } catch (error) {
+    console.error('Error al auditar actualización: ', error);
+  }
     return pedidoActualizado;
   }
 
