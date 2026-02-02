@@ -4,17 +4,17 @@ import { Platillo } from './entities/platillo.entity';
 import { CreatePlatilloInput } from './dto/create-platillo.input';
 import { UpdatePlatilloInput } from './dto/update-platillo.input';
 import { UseGuards } from '@nestjs/common';  // Para auth
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';  // Asume que existe
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';  // Asume que existe
 
 @Resolver(() => Platillo)
 export class PlatillosResolver {
   constructor(private readonly platillosService: PlatillosService) {}
 
   @Mutation(() => Platillo)
-  //@UseGuards(JwtAuthGuard)  // Protege con auth
+@UseGuards(JwtAuthGuard)  // Protege con auth
   createPlatillo(@Args('createPlatilloInput') createPlatilloInput: CreatePlatilloInput,@Context() context:any) {
-    //const usuarioCedula = context.req.user.cedula;
-    const usuarioCedula="1005277489"
+    const usuarioCedula = context.req.user.cedula;
+    //const usuarioCedula="1005277489"
     return this.platillosService.create(createPlatilloInput,usuarioCedula);
   }
 
