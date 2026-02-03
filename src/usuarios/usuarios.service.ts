@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt'; // Necesario para el hash
 export class UsuariosService {
   constructor(private prisma: PrismaService,
     private auditoriaService: AuditoriaService
-  ) {}
+  ) { }
 
   async create(input: CreateUsuarioInput) {
     // 1. Encriptar la contraseña
@@ -30,10 +30,25 @@ export class UsuariosService {
         telefono: input.telefono ?? null,
       };
 
-      return await this.prisma.usuario.create({
+      const usuarioNuevo = await this.prisma.usuario.create({
         data: dataToCreate,
         include: { rol: true }, // Devolvemos el rol
       });
+
+      try {
+        const { contrasenaHash, ...usuarioSinPassword } = usuarioNuevo;
+        await this.auditoriaService.logAction(
+          usuarioNuevo.cedula,
+          'INSERT', // Tipo de acción
+          'usuarios',       // Tabla afectada
+          usuarioNuevo.cedula,           // ID del registro (en este caso la cédula)
+          null,  // Datos viejos (lo que buscamos en el paso 1)
+          usuarioSinPassword // Datos nuevos (lo que devolvió el update)
+        );
+      } catch (error) {
+        console.error('Error al auditar actualización:', error);
+      }
+      return usuarioNuevo;
     } catch (error) {
       // 🚨 BLOQUE DE DIAGNÓSTICO: Registrar el error de la base de datos
       console.error('--- ERROR DE BASE DE DATOS CRÍTICO ---');
@@ -60,46 +75,46 @@ export class UsuariosService {
   }
   async findByRolId(rolId: number) {
     return this.prisma.usuario.findMany({
-     where: { rolId },
+      where: { rolId },
       include: { rol: true },
     });
   }
-async updateEstado(cedula: string, nuevoEstado: string) {
+  async updateEstado(cedula: string, nuevoEstado: string, usuarioCedula: any) {
 
-  const usuarioAnterior = await this.prisma.usuario.findUnique({
-    where: { cedula },
-  });
+    const usuarioAnterior = await this.prisma.usuario.findUnique({
+      where: { cedula },
+    });
 
-  if (!usuarioAnterior) {
-    throw new Error(`No se puede actualizar: El usuario con cédula ${cedula} no existe.`);
+    if (!usuarioAnterior) {
+      throw new Error(`No se puede actualizar: El usuario con cédula ${cedula} no existe.`);
+    }
+
+    const usuarioActualizado = await this.prisma.usuario.update({
+      where: { cedula },
+      data: { estado: nuevoEstado },
+      include: { rol: true },
+    });
+    try {
+      await this.auditoriaService.logAction(
+        usuarioCedula,
+        'UPDATE', // Tipo de acción
+        'usuarios',       // Tabla afectada
+        cedula,           // ID del registro (en este caso la cédula)
+        { estado: usuarioAnterior.estado },  // Datos viejos (lo que buscamos en el paso 1)
+        { estado: usuarioActualizado.estado } // Datos nuevos (lo que devolvió el update)
+      );
+    } catch (error) {
+      console.error('Error al auditar actualización:', error);
+    }
+
+    return usuarioActualizado;
+
+    // return this.prisma.usuario.update({
+    //   where: { cedula },
+    //   data: { estado: nuevoEstado },
+    //   include: { rol: true },
+    // });
   }
-
-  const usuarioActualizado = await this.prisma.usuario.update({
-    where: { cedula },
-    data: {estado:nuevoEstado},
-    include: { rol: true },
-  });
-  try {
-    await this.auditoriaService.logAction(
-      cedula, 
-      'UPDATE', // Tipo de acción
-      'usuarios',       // Tabla afectada
-      cedula,           // ID del registro (en este caso la cédula)
-      {estado:usuarioAnterior.estado},  // Datos viejos (lo que buscamos en el paso 1)
-      {estado:usuarioActualizado.estado} // Datos nuevos (lo que devolvió el update)
-    );
-  } catch (error) {
-    console.error('Error al auditar actualización:', error);
-  }
-
-  return usuarioActualizado;
-
-  // return this.prisma.usuario.update({
-  //   where: { cedula },
-  //   data: { estado: nuevoEstado },
-  //   include: { rol: true },
-  // });
-}
   async findOneByEmail(email: string) {
     return this.prisma.usuario.findUnique({
       where: { email },

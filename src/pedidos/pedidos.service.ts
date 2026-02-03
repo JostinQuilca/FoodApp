@@ -11,14 +11,14 @@ export class PedidosService {
     private prisma: PrismaService,
     private auditoriaService: AuditoriaService,
     @Optional()
-    private readonly facturacionService?: FacturacionService){}
+    private readonly facturacionService?: FacturacionService) { }
 
 
   async create(data: CreatePedidoInput) {
     // Extraemos los detalles del objeto principal
     const { detalles, ...pedidoData } = data;
 
-    const pedido= await this.prisma.pedido.create({
+    const pedido = await this.prisma.pedido.create({
       data: {
         // Mapeamos los campos del Pedido (Maestro)
         usuarioCedula: pedidoData.usuarioCedula,
@@ -40,27 +40,27 @@ export class PedidosService {
           })),
         },
       },
-      include: { 
-        usuario: true, 
+      include: {
+        usuario: true,
         detalles: {
           include: {
             platillo: true // Para ver el nombre del platillo en la respuesta
           }
-        } 
+        }
       },
     });
     try {
-    await this.auditoriaService.logAction(
-      pedido.usuarioCedula, 
-      'INSERT', // Tipo de acción
-      'pedidos',       // Tabla afectada
-      pedido.id.toString(),           // ID del registro (en este caso la cédula)
-      null,  // Datos viejos (lo que buscamos en el paso 1)
-      pedido // Datos nuevos (lo que devolvió el update)
-    );
-  } catch (error) {
-    console.error('Error al auditar creación: ', error);
-  }
+      await this.auditoriaService.logAction(
+        pedido.usuarioCedula,
+        'INSERT', // Tipo de acción
+        'pedidos',       // Tabla afectada
+        pedido.id.toString(),           // ID del registro (en este caso la cédula)
+        null,  // Datos viejos (lo que buscamos en el paso 1)
+        pedido // Datos nuevos (lo que devolvió el update)
+      );
+    } catch (error) {
+      console.error('Error al auditar creación: ', error);
+    }
     return pedido;
   }
 
@@ -77,7 +77,7 @@ export class PedidosService {
       },
     });
   }
-  
+
   async findOne(id: number) {
     return this.prisma.pedido.findUnique({
       where: { id },
@@ -89,19 +89,6 @@ export class PedidosService {
     const pedidoAnterior = await this.prisma.pedido.findUnique({
       where: { id },
       include: { factura: true },
-    });
-    
-    const pedidoActualizado= await this.prisma.pedido.update({
-
-      where: { id },
-      data: {
-        tipoEntrega: updatePedidoInput.tipoEntrega,
-        direccionEntrega: updatePedidoInput.direccionEntrega,
-        montoTotal: updatePedidoInput.montoTotal,
-        estadoPedido: updatePedidoInput.estadoPedido,
-        estado: updatePedidoInput.estado,
-      },
-      include: { usuario: true, detalles: { include: { platillo: true } } },
     });
 
     // RF-01: Generar factura automáticamente si el estado cambia a "Autorizado"
@@ -119,19 +106,29 @@ export class PedidosService {
         console.error(`Error generando factura automática para pedido ${id}:`, error.message);
       }
     }
-
+    const pedidoActualizado = await this.prisma.pedido.update({
+      where: { id },
+      data: {
+        tipoEntrega: updatePedidoInput.tipoEntrega,
+        direccionEntrega: updatePedidoInput.direccionEntrega,
+        montoTotal: updatePedidoInput.montoTotal,
+        estadoPedido: updatePedidoInput.estadoPedido,
+        estado: updatePedidoInput.estado,
+      },
+      include: { usuario: true, detalles: { include: { platillo: true } } },
+    });
     try {
-    await this.auditoriaService.logAction(
-      pedidoActualizado.usuarioCedula, 
-      'UPDATE', // Tipo de acción
-      'pedidos',       // Tabla afectada
-      pedidoActualizado.id.toString(),           // ID del registro (en este caso la cédula)
-      pedidoAnterior,  // Datos viejos (lo que buscamos en el paso 1)
-      pedidoActualizado // Datos nuevos (lo que devolvió el update)
-    );
-  } catch (error) {
-    console.error('Error al auditar actualización: ', error);
-  }
+      await this.auditoriaService.logAction(
+        pedidoActualizado.usuarioCedula,
+        'UPDATE', // Tipo de acción
+        'pedidos',       // Tabla afectada
+        pedidoActualizado.id.toString(),           // ID del registro (en este caso la cédula)
+        pedidoAnterior,  // Datos viejos (lo que buscamos en el paso 1)
+        pedidoActualizado // Datos nuevos (lo que devolvió el update)
+      );
+    } catch (error) {
+      console.error('Error al auditar actualización: ', error);
+    }
     return pedidoActualizado;
   }
 

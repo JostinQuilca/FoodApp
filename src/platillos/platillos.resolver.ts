@@ -8,14 +8,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';  // Asume que exis
 
 @Resolver(() => Platillo)
 export class PlatillosResolver {
-  constructor(private readonly platillosService: PlatillosService) {}
+  constructor(private readonly platillosService: PlatillosService) { }
 
   @Mutation(() => Platillo)
-@UseGuards(JwtAuthGuard)  // Protege con auth
-  createPlatillo(@Args('createPlatilloInput') createPlatilloInput: CreatePlatilloInput,@Context() context:any) {
+  @UseGuards(JwtAuthGuard)  // Protege con auth
+  createPlatillo(@Args('createPlatilloInput') createPlatilloInput: CreatePlatilloInput, @Context() context: any) {
     const usuarioCedula = context.req.user.cedula;
-    //const usuarioCedula="1005277489"
-    return this.platillosService.create(createPlatilloInput,usuarioCedula);
+    return this.platillosService.create(createPlatilloInput, usuarioCedula);
   }
 
   @Query(() => [Platillo], { name: 'platillos' })
@@ -29,16 +28,16 @@ export class PlatillosResolver {
   }
 
   @Mutation(() => Platillo)
-  //@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   updatePlatillo(
-    @Args('updatePlatilloInput') updatePlatilloInput: UpdatePlatilloInput,@Context() context:any
+    @Args('updatePlatilloInput') updatePlatilloInput: UpdatePlatilloInput, @Context() context: any
   ) {
-    const usuarioCedula="1005277489"
-    return this.platillosService.update(updatePlatilloInput.id,usuarioCedula, updatePlatilloInput);
+    const usuarioCedula = context.req.user.cedula;
+    return this.platillosService.update(updatePlatilloInput.id, usuarioCedula, updatePlatilloInput);
   }
 
   @Mutation(() => Platillo)
-  //@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   removePlatillo(@Args('id', { type: () => Int }) id: number) {
     return this.platillosService.remove(id);
   }

@@ -3,10 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateFacturaInput } from './dto/create-factura.input';
 import { UpdateFacturaInput } from './dto/update-factura.input';
 import { Decimal } from '@prisma/client/runtime/library';
+import { AuditoriaService } from '@/auditoria/auditoria.service';
 
 @Injectable()
 export class FacturacionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService,
+    private auditoriaService: AuditoriaService
+  ) { }
 
   /**
    * Generar número de factura único
@@ -116,8 +119,25 @@ export class FacturacionService {
         });
       }
 
+      this.auditoriaFactura(null, factura, 'INSERT');
+
       return factura;
     });
+  }
+
+  async auditoriaFactura(facturaAnterior: any, facturaNueva: any, action: string) {
+    try {
+      await this.auditoriaService.logAction(
+        facturaNueva.usuarioCedula,
+        action,
+        'factura',
+        facturaNueva.id.toString(),
+        facturaAnterior ?? null,
+        facturaNueva 
+      );
+    } catch (error) {
+      console.error('Error auditando factura:', error);
+    }
   }
 
   /**
@@ -193,6 +213,8 @@ export class FacturacionService {
           },
         });
       }
+
+      this.auditoriaFactura(null, factura, 'INSERT');
 
       return factura;
     });
@@ -288,7 +310,7 @@ export class FacturacionService {
       throw new BadRequestException(`Estado no válido. Usar: ${estadosValidos.join(', ')}`);
     }
 
-    return this.prisma.factura.update({
+    const facturaActualizada = await this.prisma.factura.update({
       where: { id },
       data: {
         estadoFactura: input.estadoFactura || factura.estadoFactura,
@@ -300,6 +322,19 @@ export class FacturacionService {
         detalles: { include: { platillo: true } },
       },
     });
+    try {
+      await this.auditoriaService.logAction(
+        facturaActualizada.usuarioCedula,
+        "UPDATE",
+        'factura',
+        facturaActualizada.id.toString(),
+        { estadoFactura: factura.estadoFactura, descripcion: factura.descripcion },
+        { estadoFactura: facturaActualizada.estadoFactura, descripcion: facturaActualizada.descripcion } 
+      );
+    } catch (error) {
+      console.error('Error auditando factura:', error);
+    }
+    return facturaActualizada;
   }
 
   /**
@@ -312,7 +347,7 @@ export class FacturacionService {
       throw new BadRequestException('Esta factura ya está anulada');
     }
 
-    return this.prisma.factura.update({
+    const facturaActualizada = await this.prisma.factura.update({
       where: { id },
       data: { estadoFactura: 'ANULADA' },
       include: {
@@ -321,6 +356,20 @@ export class FacturacionService {
         detalles: { include: { platillo: true } },
       },
     });
+
+    try {
+      await this.auditoriaService.logAction(
+        facturaActualizada.usuarioCedula,
+        "UPDATE",
+        'factura',
+        facturaActualizada.id.toString(),
+        { estadoFactura: factura.estadoFactura },
+        { estadoFactura: facturaActualizada.estadoFactura } 
+      );
+    } catch (error) {
+      console.error('Error auditando factura:', error);
+    }
+    return facturaActualizada;
   }
 
   /**
