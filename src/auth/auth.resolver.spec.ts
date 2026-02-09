@@ -1,12 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthResolver } from './auth.resolver';
+import { AuthService } from './auth.service';
 
 describe('AuthResolver', () => {
   let resolver: AuthResolver;
 
   beforeEach(async () => {
+    const mockAuthService = { login: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthResolver],
+      providers: [
+        AuthResolver,
+        { provide: AuthService, useValue: mockAuthService },
+      ],
     }).compile();
 
     resolver = module.get<AuthResolver>(AuthResolver);

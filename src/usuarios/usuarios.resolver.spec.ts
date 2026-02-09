@@ -6,8 +6,12 @@ describe('UsuariosResolver', () => {
   let resolver: UsuariosResolver;
 
   beforeEach(async () => {
+    const mockUsuariosService = { findAll: jest.fn(), findOne: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsuariosResolver, UsuariosService],
+      providers: [
+        UsuariosResolver,
+        { provide: UsuariosService, useValue: mockUsuariosService },
+      ],
     }).compile();
 
     resolver = module.get<UsuariosResolver>(UsuariosResolver);

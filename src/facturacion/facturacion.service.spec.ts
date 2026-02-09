@@ -21,6 +21,10 @@ describe('FacturacionService', () => {
     platillo: {
       findMany: jest.fn(),
     },
+    pedido: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+    },
     detalleFactura: {
       create: jest.fn(),
     },

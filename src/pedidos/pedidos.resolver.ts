@@ -1,10 +1,10 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int,Context } from '@nestjs/graphql';
 import { PedidosService } from './pedidos.service';
 import { Pedido } from './entities/pedido.entity';
 import { CreatePedidoInput } from './dto/create-pedido.input';
 import { UpdatePedidoInput } from './dto/update-pedido.input';
 import { UseGuards } from '@nestjs/common';  // Para auth
-//import { JwtAuthGuard } from '../auth/jwt-auth.guard';  // Asume que existe
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';  // Asume que existe
 
 @Resolver(() => Pedido)
 export class pedidosResolver {
@@ -27,10 +27,14 @@ export class pedidosResolver {
   }
   
   @Mutation(() => Pedido)
- // @UseGuards(JwtAuthGuard)
+ @UseGuards(JwtAuthGuard)
   updatePedido(
-    @Args('updatePedidoInput') updatePedidoInput: UpdatePedidoInput,
+    @Args('updatePedidoInput') updatePedidoInput: UpdatePedidoInput,@Context() ctx: any,
   ) {
+    const usuarioRol = ctx.req.user?.rol?.nombre;
+    if (usuarioRol !== 'ADMINISTRADOR') {
+      throw new Error('Solo ADMINISTRADOR puede actualizar pedidos');
+    }
     return this.pedidosService.update(updatePedidoInput.id, updatePedidoInput);
   }
 

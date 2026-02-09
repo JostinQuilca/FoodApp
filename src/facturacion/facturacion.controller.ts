@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, HttpException, HttpStatus, ParseIntPipe } from '@nestjs/common';
 import { FacturacionService } from './facturacion.service';
 import { CreateFacturaInput } from './dto/create-factura.input';
 import { UpdateFacturaInput } from './dto/update-factura.input';
@@ -34,8 +34,9 @@ export class FacturacionController {
    * RF-03 y RF-04: Consulta de facturas
    */
   @Get('mis-facturas')
+  @UseGuards(JwtAuthGuard)
 async misFacturas(@Req() req: any) {
-  const usuarioCedula = req.user?.cedula ?? 'TEST123';
+  const usuarioCedula = req.user?.cedula;
   return await this.facturacionService.obtenerFacturasCliente(usuarioCedula);
 }
 
@@ -45,7 +46,7 @@ async misFacturas(@Req() req: any) {
    */
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async obtenerFactura(@Param('id') id: number, @Req() req: any) {
+  async obtenerFactura(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     try {
       const factura = await this.facturacionService.obtenerFactura(id);
       const usuarioCedula = req.user?.cedula;
