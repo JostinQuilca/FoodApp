@@ -14,7 +14,7 @@ export class FacturacionController {
 
   /**
    * POST /api/facturacion/crear-directa
-   * Crear factura directa (solo VENDEDOR)
+   * Crear factura directa (solo VENDEDOR - RESTRICCIÓN ESTRICTA)
    * RF-02: Facturación directa
    */
   @Post('crear-directa')
@@ -22,6 +22,11 @@ export class FacturacionController {
   async crearFacturaDirecta(@Body() input: CreateFacturaInput, @Req() req: any) {
     try {
       const usuarioCedula = req.user?.cedula;
+      const usuarioRol = req.user?.rol?.nombre;
+      // Validación estricta: solo VENDEDOR
+      if (usuarioRol !== 'VENDEDOR') {
+        throw new HttpException('Solo VENDEDOR puede crear facturas directas', HttpStatus.FORBIDDEN);
+      }
       return await this.facturacionService.crearFacturaDirecta(usuarioCedula, input);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
@@ -41,10 +46,29 @@ async misFacturas(@Req() req: any) {
 }
 
   /**
-   * GET /api/facturacion/:id
-   * Obtener factura por ID (solo propietario o admin)
+   * GET /api/facturacion
+   * Obtener todas las facturas (VENDEDOR y ADMINISTRADOR)
+   * RF-04: Acceso ampliado para roles de poder
    */
-  @Get(':id')
+  @Get('')
+  @UseGuards(JwtAuthGuard)
+  async obtenerTodasLasFacturas(@Req() req: any) {
+    try {
+      const usuarioRol = req.user?.rol?.nombre;
+      if (!['ADMINISTRADOR', 'VENDEDOR'].includes(usuarioRol)) {
+        throw new HttpException('Solo ADMINISTRADOR y VENDEDOR pueden ver todas las facturas', HttpStatus.FORBIDDEN);
+      }
+      return await this.facturacionService.obtenerTodasLasFacturas();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * GET /api/facturacion/id/:id
+   * Obtener factura por ID (propietario, VENDEDOR o ADMINISTRADOR)
+   */
+  @Get('id/:id')
   @UseGuards(JwtAuthGuard)
   async obtenerFactura(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     try {
@@ -52,8 +76,8 @@ async misFacturas(@Req() req: any) {
       const usuarioCedula = req.user?.cedula;
       const usuarioRol = req.user?.rol?.nombre;
 
-      // Validar acceso
-      if (factura.usuarioCedula !== usuarioCedula && usuarioRol !== 'ADMINISTRADOR') {
+      // Validar acceso: propietario, VENDEDOR o ADMINISTRADOR
+      if (factura.usuarioCedula !== usuarioCedula && !['ADMINISTRADOR', 'VENDEDOR'].includes(usuarioRol)) {
         throw new HttpException('No tiene permiso para ver esta factura', HttpStatus.FORBIDDEN);
       }
 
@@ -73,7 +97,7 @@ async misFacturas(@Req() req: any) {
     try {
       const usuarioRol = req.user?.rol?.nombre;
       if (usuarioRol !== 'ADMINISTRADOR') {
-        throw new HttpException('Solo ADMINISTRADOR puede filtrar facturas', HttpStatus.FORBIDDEN);
+        throw new HttpException('Solo ADMINISTRADOR puede filtrar facturas por estado', HttpStatus.FORBIDDEN);
       }
       return await this.facturacionService.obtenerFacturasPorEstado(estado);
     } catch (error) {

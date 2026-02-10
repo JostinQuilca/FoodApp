@@ -30,9 +30,10 @@ export class FacturacionService {
   /**
    * Crear factura directa (solo VENDEDOR)
    * RF-02: Facturación directa sin pedido previo
+   * IMPORTANTE: Solo VENDEDOR puede crear, NO ADMINISTRADOR
    */
   async crearFacturaDirecta(usuarioActualCedula: string, input: CreateFacturaInput): Promise<any> {
-    // Validar que el usuario existe y es VENDEDOR
+    // Validar que el usuario existe y es VENDEDOR (RESTRICCIÓN ESTRICTA)
     const usuarioActual = await this.prisma.usuario.findUnique({
       where: { cedula: usuarioActualCedula },
       include: { rol: true },
@@ -42,8 +43,8 @@ export class FacturacionService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    if (usuarioActual.rol.nombre !== 'VENDEDOR' && usuarioActual.rol.nombre !== 'ADMINISTRADOR') {
-      throw new ForbiddenException('Solo VENDEDOR o ADMINISTRADOR puede crear facturas directas');
+    if (usuarioActual.rol.nombre !== 'VENDEDOR') {
+      throw new ForbiddenException('Solo VENDEDOR puede crear facturas directas');
     }
 
     // Validar que el cliente existe
@@ -82,11 +83,16 @@ export class FacturacionService {
 
     // Crear factura con detalles en transacción
     return this.prisma.$transaction(async (tx) => {
+      // Calcular fecha de vencimiento (30 días por defecto)
+      const fechaVencimiento = new Date();
+      fechaVencimiento.setDate(fechaVencimiento.getDate() + 30);
+
       const factura = await tx.factura.create({
-        data: {
+        data:{
           numeroFactura,
           usuarioCedula: input.usuarioCedula,
           fechaFactura: new Date(),
+          fechaVencimiento, // ← Agregado
           montoSubtotal: montoSubtotal.toNumber(),
           montoIva: montoIva.toNumber(),
           montoTotal: montoTotal.toNumber(),
@@ -172,6 +178,9 @@ export class FacturacionService {
 
     // Crear factura con detalles en transacción
     const numeroFactura = await this.generarNumeroFactura();
+    // Calcular fecha de vencimiento (30 días por defecto)
+    const fechaVencimiento = new Date();
+    fechaVencimiento.setDate(fechaVencimiento.getDate() + 30);
 
     return this.prisma.$transaction(async (tx) => {
       const factura = await tx.factura.create({
@@ -180,6 +189,7 @@ export class FacturacionService {
           usuarioCedula: pedido.usuarioCedula,
           pedidoId: pedido.id,
           fechaFactura: new Date(),
+          fechaVencimiento, // ← Agregado
           montoSubtotal: pedido.montoTotal,
           montoIva: 0, // Se puede calcular según política
           montoTotal: pedido.montoTotal,
@@ -370,6 +380,22 @@ export class FacturacionService {
       console.error('Error auditando factura:', error);
     }
     return facturaActualizada;
+  }
+
+  /**
+   * Obtener todas las facturas (VENDEDOR y ADMINISTRADOR)
+   * RF-04: Acceso ampliado para roles de poder
+   */
+  async obtenerTodasLasFacturas(): Promise<any[]> {
+    return this.prisma.factura.findMany({
+      where: { estado: 'ACTIVO' },
+      include: {
+        usuario: { include: { rol: true } },
+        pedido: true,
+        detalles: { include: { platillo: true } },
+      },
+      orderBy: { fechaFactura: 'desc' },
+    });
   }
 
   /**
