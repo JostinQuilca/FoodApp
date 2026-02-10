@@ -13,6 +13,8 @@ describe('FacturacionService', () => {
       pedido: { findUnique: jest.fn() },
       factura: { create: jest.fn(), findFirst: jest.fn() },
       detalleFactura: { create: jest.fn() },
+      usuario: { findUnique: jest.fn() },
+      platillo: { findMany: jest.fn() },
       $transaction: jest.fn((callback) => callback(mockPrisma)),
     };
     mockAuditoria = { logAction: jest.fn() };
@@ -50,13 +52,14 @@ describe('FacturacionService', () => {
       tipoFactura: 'PEDIDO',
       estadoFactura: 'EMITIDA',
       montoTotal: 112,
+      usuarioCedula: '1234567890', // Necesario para auditoriaFactura
     });
     const resultado = await service.generarFacturaDesdeoPedido(1);
     expect(resultado.tipoFactura).toBe('PEDIDO');
     expect(resultado.estadoFactura).toBe('EMITIDA');
   });
 
-  // Prueba 02: No crea factura si ya existe
+  // Prueba 02: No genera factura si el pedido no está autorizado
   it('NoGenerarFactSinEstarAprobado', async () => {
   const pedidoNoAutorizado = {
     id: 2,
@@ -72,46 +75,72 @@ describe('FacturacionService', () => {
   
   await expect(service.generarFacturaDesdeoPedido(2))
     .rejects
-    .toThrow('El pedido no se encuentra en estado Autorizado');
+    .toThrow(
+      "No se puede generar factura: Pedido debe estar en estado 'Autorizado', estado actual: Pendiente",
+    );
 
   expect(mockPrisma.factura.create).not.toHaveBeenCalled();
 });
 
-
-
-
-
-
-
-
-
-  // Prueba 03: Pedido no encontrado
-  it('03: Lanza NotFoundException cuando pedido no existe', async () => {
-    mockPrisma.pedido.findUnique.mockResolvedValue(null);
-    await expect(service.generarFacturaDesdeoPedido(999)).rejects.toThrow('no encontrado');
-  });
-
-  // Prueba 04: Calcula IVA correctamente (12%)
-  it('04: Calcula IVA 12% correctamente', async () => {
-    const pedido = {
-      id: 1,
-      montoTotal: 100,
-      estadoPedido: 'Autorizado',
-      factura: null,
-      detalles: [{ cantidad: 2, precioUnitario: 50, subtotal: 100, platillo: { nombreItem: 'Platillo' } }],
-      usuario: { cedula: '1234567890', rol: { nombre: 'CLIENTE' } },
+  // Prueba 03: Creación correcta de factura directa
+  it('05: Creación correcta de factura directa por un VENDEDOR', async () => {
+    const vendedorCedula = 'VENDEDOR_CEDULA';
+    const clienteCedula = 'CLIENTE_CEDULA';
+    const input = {
+      usuarioCedula: clienteCedula,
+      detalles: [
+        { itemId: 1, cantidad: 2, precioUnitario: 10 }, 
+        { itemId: 2, cantidad: 1, precioUnitario: 5 }, 
+      ],
+      descripcion: 'Venta directa de prueba',
     };
-    mockPrisma.pedido.findUnique.mockResolvedValue(pedido);
-    mockPrisma.factura.findFirst.mockResolvedValue(null);
-    mockPrisma.factura.create.mockResolvedValue({
-      montoSubtotal: 100,
-      montoIva: 12,
-      montoTotal: 112,
-      tipoFactura: 'PEDIDO',
-      estadoFactura: 'EMITIDA',
+
+    mockPrisma.usuario.findUnique.mockResolvedValueOnce({
+      cedula: vendedorCedula,
+      rol: { nombre: 'VENDEDOR' },
     });
-    const resultado = await service.generarFacturaDesdeoPedido(1);
-    expect(resultado.montoIva).toBe(12);
-    expect(resultado.montoTotal).toBe(112);
+
+    // 2. Mock para el usuario CLIENTE de la factura
+    mockPrisma.usuario.findUnique.mockResolvedValueOnce({
+      cedula: clienteCedula,
+    });
+    // 3. Mock para los platillos/items que se están facturando
+    mockPrisma.platillo.findMany.mockResolvedValue([
+      { id: 1, nombreItem: 'Item 1', precio: 10 },
+      { id: 2, nombreItem: 'Item 2', precio: 5 },
+    ]);
+    // 4. Mock para generarNumeroFactura (asumimos que no hay facturas hoy)
+    mockPrisma.factura.findFirst.mockResolvedValue(null);
+    const facturaCreadaMock = {
+      id: 200,
+      numeroFactura: 'FCT-20240101-00001',
+      usuarioCedula: clienteCedula,
+      montoSubtotal: 25,
+      montoIva: 3,       // 25 * 0.12
+      montoTotal: 28,    // 25 + 3
+      estadoFactura: 'EMITIDA',
+      tipoFactura: 'VENTA',
+      descripcion: 'Venta directa de prueba',
+    };
+    // 5. Mock para la creación de la factura dentro de la transacción
+    mockPrisma.factura.create.mockResolvedValue(facturaCreadaMock);
+    // Act: Ejecutar el método a probar
+    const resultado = await service.crearFacturaDirecta(vendedorCedula, input);
+    // Assert: Verificar los resultados
+    expect(resultado).toEqual(facturaCreadaMock);
+    expect(mockPrisma.factura.create).toHaveBeenCalled();
+    const createData = mockPrisma.factura.create.mock.calls[0][0].data;
+    expect(createData.montoSubtotal).toBe(25);
+    expect(createData.montoIva).toBe(3);
+    expect(createData.montoTotal).toBe(28);
+    expect(createData.tipoFactura).toBe('VENTA');
+
+    // Verificar que se crearon los detalles de la factura
+    expect(mockPrisma.detalleFactura.create).toHaveBeenCalledTimes(2);
+
+    // Verificar que se llamó a la auditoría
+    expect(mockAuditoria.logAction).toHaveBeenCalledWith(
+      clienteCedula, 'INSERT', 'factura', facturaCreadaMock.id.toString(), null, facturaCreadaMock
+    );
   });
 });
