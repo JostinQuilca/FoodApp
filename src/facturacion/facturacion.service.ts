@@ -15,28 +15,44 @@ export class FacturacionService {
    * Generar número de factura único
    * Formato: FCT-YYYYMMDD-XXXXX
    */
-  private async generarNumeroFactura(): Promise<string> {
-    const fecha = new Date();
-    const año = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    
-    // Contar facturas del día actual para generar número único
-    const inicioDelDia = new Date(año, parseInt(mes) - 1, parseInt(dia));
-    const finDelDia = new Date(año, parseInt(mes) - 1, parseInt(dia) + 1);
-    
-    const contador = await this.prisma.factura.count({
-      where: {
-        fechaFactura: {
-          gte: inicioDelDia,
-          lt: finDelDia,
-        },
+ /**
+ * Generar número de factura único
+ * Se recomienda pasar el 'tx' (prisma client de la transacción) para evitar colisiones
+ */
+private async generarNumeroFactura(tx?: any): Promise<string> {
+  const prismaClient = tx || this.prisma;
+  const fecha = new Date();
+  const año = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  
+  const inicioDelDia = new Date(año, fecha.getMonth(), fecha.getDate());
+  const finDelDia = new Date(año, fecha.getMonth(), fecha.getDate() + 1);
+  
+  // En lugar de count, buscamos la última factura emitida hoy
+  const ultimaFactura = await prismaClient.factura.findFirst({
+    where: {
+      fechaFactura: {
+        gte: inicioDelDia,
+        lt: finDelDia,
       },
-    });
-    
-    const numero = String(contador + 1).padStart(5, '0');
-    return `FCT-${año}${mes}${dia}-${numero}`;
+    },
+    orderBy: { id: 'desc' }, // O por numeroFactura si es incremental
+    select: { numeroFactura: true }
+  });
+
+  let nuevoSecuencial = 1;
+
+  if (ultimaFactura) {
+    // Extraer el número después del último guion: FCT-YYYYMMDD-XXXXX
+    const partes = ultimaFactura.numeroFactura.split('-');
+    const ultimoNumero = parseInt(partes[partes.length - 1], 10);
+    nuevoSecuencial = ultimoNumero + 1;
   }
+  
+  const secuencialFormateado = String(nuevoSecuencial).padStart(5, '0');
+  return `FCT-${año}${mes}${dia}-${secuencialFormateado}`;
+}
 
   /**
    * Crear factura directa (solo VENDEDOR)
@@ -187,13 +203,25 @@ export class FacturacionService {
       throw new BadRequestException(`Ya existe una factura para este pedido: ${pedido.factura.numeroFactura}`);
     }
 
-    // Crear factura con detalles en transacción
-    const numeroFactura = await this.generarNumeroFactura();
+    
     // Calcular fecha de vencimiento (30 días por defecto)
     const fechaVencimiento = new Date();
     fechaVencimiento.setDate(fechaVencimiento.getDate() + 30);
+    
+    // Calcular montos basados en los detalles del pedido (subtotal, IVA 12%)
+    const montoSubtotalDecimal = pedido.detalles && pedido.detalles.length
+      ? pedido.detalles.reduce((acc, d) => {
+          const subtotal = d.subtotal ? new Decimal(d.subtotal) : new Decimal(d.cantidad).times(new Decimal(d.precioUnitario));
+          return acc.plus(subtotal);
+        }, new Decimal(0))
+      : new Decimal(pedido.montoTotal ?? 0);
+
+    const montoIvaDecimal = montoSubtotalDecimal.times(new Decimal('0.12'));
+    const montoTotalDecimal = montoSubtotalDecimal.plus(montoIvaDecimal);
 
     return this.prisma.$transaction(async (tx) => {
+      // Crear factura con detalles en transacción
+    const numeroFactura = await this.generarNumeroFactura();
       const factura = await tx.factura.create({
         data: {
           numeroFactura,
@@ -201,9 +229,9 @@ export class FacturacionService {
           pedidoId: pedido.id,
           fechaFactura: new Date(),
           fechaVencimiento, // ← Agregado
-          montoSubtotal: pedido.montoTotal,
-          montoIva: 0, // Se puede calcular según política
-          montoTotal: pedido.montoTotal,
+          montoSubtotal: montoSubtotalDecimal.toNumber(),
+          montoIva: montoIvaDecimal.toNumber(),
+          montoTotal: montoTotalDecimal.toNumber(),
           estadoFactura: 'EMITIDA',
           tipoFactura: 'PEDIDO', // Factura automática
           descripcion: `Factura generada automáticamente desde Pedido #${pedidoId}`,
