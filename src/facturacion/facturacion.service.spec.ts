@@ -192,4 +192,40 @@ describe('FacturacionService', () => {
 
     expect(mockPrisma.factura.create).not.toHaveBeenCalled();
   });
+
+  // Prueba 06: Integridad del detalle de la factura (item no existente)
+  it('No debe crear factura si un item del detalle no existe', async () => {
+    const vendedorCedula = 'VENDEDOR_CEDULA';
+    const clienteCedula = 'CLIENTE_CEDULA';
+    const input = {
+      usuarioCedula: clienteCedula,
+      detalles: [
+        { itemId: 1, cantidad: 1, precioUnitario: 10 }, // Item existente
+        { itemId: 999, cantidad: 1, precioUnitario: 20 }, // Item INEXISTENTE
+      ],
+      descripcion: 'Venta con item fantasma',
+    };
+
+    // 1. Mock para el usuario VENDEDOR que crea la factura
+    mockPrisma.usuario.findUnique.mockResolvedValueOnce({
+      cedula: vendedorCedula,
+      rol: { nombre: 'VENDEDOR' },
+    });
+
+    // 2. Mock para el usuario CLIENTE de la factura
+    mockPrisma.usuario.findUnique.mockResolvedValueOnce({
+      cedula: clienteCedula,
+    });
+
+    // 3. Mock para los platillos: solo devolvemos el item 1, no el 999
+    mockPrisma.platillo.findMany.mockResolvedValue([
+      { id: 1, nombreItem: 'Item Existente', precio: 10 },
+    ]);
+
+    // 4. Act & Assert: Esperamos que el método falle con el error correcto
+    await expect(service.crearFacturaDirecta(vendedorCedula, input)).rejects.toThrow('Uno o más items no existen en el sistema');
+
+    // 5. Assert: Verificamos que no se haya intentado crear la factura
+    expect(mockPrisma.factura.create).not.toHaveBeenCalled();
+  });
 });
