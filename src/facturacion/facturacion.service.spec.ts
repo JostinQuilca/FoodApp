@@ -171,4 +171,25 @@ describe('FacturacionService', () => {
       expect.objectContaining({ where: { usuarioCedula: clienteCedula, estado: 'ACTIVO' } }),
     );
   });
+
+  // Prueba 05: Restricción de acceso por rol
+  it('No debe crear factura directa si el rol no es VENDEDOR', async () => {
+    const noVendedorCedula = 'NO_VENDEDOR_CEDULA';
+    const input = {
+      usuarioCedula: 'CLIENTE_CEDULA',
+      detalles: [{ itemId: 1, cantidad: 1, precioUnitario: 10 }],
+      descripcion: 'Intento de venta por rol no autorizado',
+    };
+
+    mockPrisma.usuario.findUnique.mockResolvedValue({
+      cedula: noVendedorCedula,
+      rol: { nombre: 'ADMINISTRADOR' }, // Usamos un rol que no sea VENDEDOR
+    });
+
+    await expect(service.crearFacturaDirecta(noVendedorCedula, input))
+      .rejects
+      .toThrow('Solo VENDEDOR puede crear facturas directas');
+
+    expect(mockPrisma.factura.create).not.toHaveBeenCalled();
+  });
 });
