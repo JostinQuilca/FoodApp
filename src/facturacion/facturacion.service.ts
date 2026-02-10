@@ -176,11 +176,11 @@ export class FacturacionService {
       throw new NotFoundException(`Pedido ${pedidoId} no encontrado`);
     }
 
-    if (pedido.estadoPedido !== 'Autorizado') {
+   /* if (pedido.estadoPedido !== 'Autorizado') {
       throw new BadRequestException(
         `No se puede generar factura: Pedido debe estar en estado 'Autorizado', estado actual: ${pedido.estadoPedido}`,
       );
-    }
+    }*/
 
     // Verificar que no exista factura previa (RF: Un pedido = una factura máximo)
     if (pedido.factura) {
