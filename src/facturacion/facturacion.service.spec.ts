@@ -11,7 +11,7 @@ describe('FacturacionService', () => {
   beforeEach(async () => {
     mockPrisma = {
       pedido: { findUnique: jest.fn() },
-      factura: { create: jest.fn(), findFirst: jest.fn() },
+      factura: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
       detalleFactura: { create: jest.fn() },
       usuario: { findUnique: jest.fn() },
       platillo: { findMany: jest.fn() },
@@ -141,6 +141,34 @@ describe('FacturacionService', () => {
     // Verificar que se llamó a la auditoría
     expect(mockAuditoria.logAction).toHaveBeenCalledWith(
       clienteCedula, 'INSERT', 'factura', facturaCreadaMock.id.toString(), null, facturaCreadaMock
+    );
+  });
+
+  // Prueba 04: Asociación correcta cliente–factura
+  it('AsociaciónCorrectaCliente–factura', async () => {
+    const clienteCedula = 'CLIENTE_CON_FACTURAS';
+    const otroClienteCedula = 'OTRO_CLIENTE';
+
+    mockPrisma.usuario.findUnique.mockResolvedValue({ cedula: clienteCedula });
+
+    const facturasMock = [
+      { id: 1, usuarioCedula: clienteCedula, montoTotal: 100 },
+      { id: 2, usuarioCedula: otroClienteCedula, montoTotal: 50 }, 
+      { id: 3, usuarioCedula: clienteCedula, montoTotal: 200 },
+    ];
+
+    const facturasEsperadas = facturasMock.filter(f => f.usuarioCedula === clienteCedula);
+
+    mockPrisma.factura.findMany.mockResolvedValue(facturasEsperadas);
+
+    const resultado = await service.obtenerFacturasCliente(clienteCedula);
+
+    expect(resultado).toHaveLength(2);
+    expect(resultado[0].usuarioCedula).toBe(clienteCedula);
+    expect(resultado[1].usuarioCedula).toBe(clienteCedula);
+
+    expect(mockPrisma.factura.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { usuarioCedula: clienteCedula, estado: 'ACTIVO' } }),
     );
   });
 });
