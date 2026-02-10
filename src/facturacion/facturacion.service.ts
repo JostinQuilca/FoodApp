@@ -20,9 +20,20 @@ export class FacturacionService {
     const año = fecha.getFullYear();
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
     const dia = String(fecha.getDate()).padStart(2, '0');
-    // TODO: Descomentar después de npx prisma generate
-    // const contador = await this.prisma.factura.count();
-    const contador = 0; // Temporal
+    
+    // Contar facturas del día actual para generar número único
+    const inicioDelDia = new Date(año, parseInt(mes) - 1, parseInt(dia));
+    const finDelDia = new Date(año, parseInt(mes) - 1, parseInt(dia) + 1);
+    
+    const contador = await this.prisma.factura.count({
+      where: {
+        fechaFactura: {
+          gte: inicioDelDia,
+          lt: finDelDia,
+        },
+      },
+    });
+    
     const numero = String(contador + 1).padStart(5, '0');
     return `FCT-${año}${mes}${dia}-${numero}`;
   }
